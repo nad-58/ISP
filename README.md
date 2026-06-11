@@ -2,77 +2,123 @@
 
 Educational Python implementation of an Image Signal Processor (ISP) pipeline.
 
-This repository explains how raw Bayer sensor data can be transformed into display-ready RGB or YUV images using a simplified ISP pipeline. The goal is educational: to demonstrate the main processing stages used in real camera systems without exposing proprietary vendor code, confidential documentation, company-specific implementation details, or private MATLAB source code.
+This repository explains how raw Bayer sensor data can be transformed into display-ready RGB images using a simplified, public-safe ISP pipeline. It demonstrates the major processing stages used in camera systems without exposing proprietary vendor code, confidential documentation, company-specific implementation details, or private MATLAB source code.
 
-## Why this project?
+## Implemented pipeline
 
-An Image Signal Processor is the part of a camera system that converts raw sensor measurements into usable images. A typical ISP performs corrections and transformations such as black-level correction, defect-pixel correction, white balance, lens shading correction, demosaicing, colour correction, tone mapping, gamma correction, sharpening, and RGB/YUV output conversion.
-
-This project provides a clean Python reference implementation to help engineers, students, and researchers understand the core concepts behind ISP pipelines.
-
-## Pipeline overview
-
-The initial educational pipeline is structured around the following stages:
+The current Python pipeline includes:
 
 1. Raw Bayer input handling
 2. Black-level correction
 3. Defect-pixel correction
 4. Green-channel equalisation
-5. Spatial noise reduction
-6. White balance and digital gain
-7. Lens shading correction
-8. Tone mapping
-9. Demosaicing from Bayer to RGB
-10. 3x3 colour correction matrix
-11. Gamma correction
-12. Sharpening
-13. RGB to YUV conversion
-14. Dithering and output quantisation
-15. Cropping and output formatting
+5. White balance and digital gain
+6. Lens shading correction
+7. Optional percentile autogain
+8. Bayer demosaicing
+9. 3x3 colour correction
+10. Reinhard tone mapping
+11. Detail enhancement
+12. Gamma correction
+13. 8-bit RGB output conversion
 
-The modules are intentionally simplified. They are not intended to reproduce any proprietary ISP vendor implementation.
+The modules are intentionally simplified and educational. They are not intended to reproduce a proprietary ISP implementation.
 
-## Repository status
+## Repository structure
 
-This repository is being built in stages:
-
-- Stage 1: public educational structure and documentation
-- Stage 2: clean Python ISP building blocks
-- Stage 3: example pipeline and demo image processing
-- Stage 4: tests and validation examples
-- Stage 5: optional conversion of separately reviewed MATLAB logic into sanitized Python only
-
-No MATLAB source code or confidential documentation should be committed to this repository.
+```text
+ISP/
+├── src/isp/                    # Reusable ISP stages and pipeline
+├── examples/
+│   ├── run_pipeline.py         # Synthetic image-to-RGB demonstration
+│   └── numerical_walkthrough.py # Small inspectable Bayer-matrix example
+├── tests/
+│   ├── test_pipeline.py        # End-to-end pipeline smoke test
+│   └── test_isp_stages.py      # Stage validation and boundary tests
+├── .github/workflows/
+│   └── python-checks.yml       # Compile, test, examples, and pip-audit
+├── pyproject.toml              # Package and development metadata
+└── requirements.txt
+```
 
 ## Installation
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
-pip install -r requirements.txt
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -e ".[dev]"
 ```
 
-## Example usage
+## Run the examples
+
+Run the full synthetic-image pipeline:
 
 ```bash
-python examples/run_pipeline.py
+MPLBACKEND=Agg python examples/run_pipeline.py
 ```
 
-The example uses a synthetic Bayer image so that the repository can run without private datasets.
+The generated image is saved to:
 
-## Confidentiality policy
+```text
+outputs/synthetic_isp_output.png
+```
 
-This repository must contain only generic educational material. Do not commit:
+Run the numerical walkthrough:
 
-- MATLAB source code before conversion and sanitization
-- proprietary documentation
-- company names or customer names
-- internal project names
-- confidential comments, file paths, or register maps
-- private calibration data or sensor tuning files
+```bash
+python examples/numerical_walkthrough.py
+```
 
-Any external or legacy code should first be converted into clean Python, reviewed, and stripped of confidential identifiers before being added.
+The walkthrough prints:
+
+- the input 4x4 Bayer matrix;
+- black-level corrected values;
+- the demosaiced RGB shape;
+- the tone-mapped range;
+- the final 8-bit RGB matrix.
+
+## Run validation locally
+
+```bash
+python -m compileall -q src examples tests
+python -m pytest tests -q
+pip-audit
+```
+
+Automated GitHub Actions performs the same compile, test, example, and dependency-audit checks on every push and pull request.
+
+## Test coverage
+
+The current tests check:
+
+- end-to-end RGB output shape and `uint8` type;
+- safe float conversion during black-level subtraction;
+- clipping of negative corrected values;
+- rejection of invalid Bayer patterns;
+- demosaicing output shape and finite values;
+- finite tone-mapping and gamma results;
+- final 8-bit output range.
+
+## Public-safe scope
+
+This repository contains only generic educational material. Do not commit:
+
+- unreviewed MATLAB source code;
+- proprietary documentation;
+- company or customer identifiers;
+- internal project names;
+- confidential comments, paths, or register maps;
+- private calibration data or sensor tuning files.
+
+Any external or legacy logic should first be converted into clean Python, reviewed, and stripped of confidential identifiers before being added.
+
+## Roadmap
+
+- Add RGB-to-YUV and output-format examples
+- Add image-quality metrics and stage-by-stage visual comparisons
+- Add configurable YAML pipeline examples
+- Expand tests for defect correction, lens shading, autogain, sharpening, and colour correction
+- Add benchmark timing for larger synthetic frames
 
 ## License
 
